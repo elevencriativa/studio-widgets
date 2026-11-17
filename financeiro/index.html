@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Faturamento do Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8ff;
+    --card: #ffffff;
+    --line: #ece8f5;
+    --ink: #1d1530;
+    --ink-soft: #6b6280;
+    --green: #16a36a;
+    --green-soft: #d6f5e6;
+    --red: #e5484d;
+    --blue: #3b6cf6;
+    --orange: #f08c1a;
+    --purple: #7c3aed;
+    --hero-1: #1b1530;
+    --hero-2: #3a1f5c;
+  }
+  :root[data-tema="escuro"] {
+    --bg: #151022;
+    --card: #1f1830;
+    --line: #30284a;
+    --ink: #f5f1ff;
+    --ink-soft: #a99fc2;
+    --green-soft: #1d3b2e;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Inter", system-ui, sans-serif; background: var(--bg); color: var(--ink); padding: 16px; }
+  .wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+  .hero {
+    border-radius: 22px;
+    padding: 26px 28px;
+    color: #fff;
+    background: radial-gradient(120% 140% at 100% 0%, #6d3bd6 0%, transparent 55%), linear-gradient(135deg, var(--hero-1), var(--hero-2));
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+  }
+  .hero .label { font-size: 14px; opacity: .75; font-weight: 500; letter-spacing: .02em; }
+  .hero .big {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: clamp(44px, 9vw, 84px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .bar { height: 12px; border-radius: 99px; background: rgba(255,255,255,.14); margin-top: 18px; overflow: hidden; }
+  .bar span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #34d399, #a7f3d0); width: 0; transition: width 1s ease; }
+  .meta-line { margin-top: 10px; font-size: 14px; opacity: .85; display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta-line b { font-weight: 600; }
+  .ring { width: 150px; height: 150px; position: relative; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .pct {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 34px;
+  }
+  .ring .pct small { display: block; font-family: "Inter"; font-size: 12px; font-weight: 500; opacity: .7; }
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .kpi .l { font-size: 12.5px; color: var(--ink-soft); font-weight: 500; }
+  .kpi .v { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 24px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  h2 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .chart { display: flex; align-items: flex-end; gap: 18px; }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+  .area { position: relative; height: 150px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .col .stick { width: 100%; max-width: 54px; border-radius: 10px 10px 4px 4px; background: var(--green-soft); position: relative; overflow: hidden; }
+  .col .stick i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--green); border-radius: 10px 10px 4px 4px; }
+  .col .goal { position: absolute; left: 50%; width: 70px; margin-left: -35px; border-top: 2px dashed var(--purple); }
+  .col small { font-size: 11px; color: var(--ink-soft); }
+  .col .n { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--ink-soft); margin-top: 12px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .msg { text-align: center; color: var(--ink-soft); padding: 60px 0; font-size: 14px; }
+  footer { font-size: 12px; color: var(--ink-soft); text-align: right; }
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; }
+    .ring { margin: 0 auto; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<main class="wrap" id="app"><div class="msg">Carregando…</div></main>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.get("tema") === "escuro") document.documentElement.dataset.tema = "escuro";
+
+  const brl = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const SHORT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const b64 = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+
+  async function decrypt() {
+    const k = new URLSearchParams(location.hash.slice(1)).get("k");
+    if (!k) throw new Error("Link sem chave.");
+    const key = await crypto.subtle.importKey("raw", b64(k), "AES-GCM", false, ["decrypt"]);
+    const res = await fetch(`data.enc.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error("Ainda sem dados. A primeira atualização roda em até 1 hora.");
+    const { iv, ct } = await res.json();
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(iv) }, key, b64(ct));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+
+  function render(d) {
+    const pct = d.meta ? Math.round((d.fechado / d.meta) * 100) : 0;
+    const falta = Math.max(0, d.meta - d.fechado);
+    const [y, m] = d.month.split("-");
+    const max = Math.max(1, ...d.historico.map((h) => Math.max(h.fechado, h.meta)));
+    const C = 2 * Math.PI * 42;
+    document.getElementById("app").innerHTML = `
+      <section class="hero">
+        <div>
+          <div class="label">🚀 Faturamento fechado em ${MONTHS[+m - 1]} de ${y}</div>
+          <div class="big">${brl(d.fechado)}</div>
+          <div class="bar"><span id="fill"></span></div>
+          <div class="meta-line">
+            <span>🏁 Meta <b>${brl(d.meta)}</b></span>
+            <span>${pct >= 100 ? "🏆 <b>Meta batida!</b>" : `⏳ Faltam <b>${brl(falta)}</b>`}</span>
+          </div>
+        </div>
+        <div class="ring">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="10"/>
+            <circle id="arc" cx="50" cy="50" r="42" fill="none" stroke="#34d399" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="0 ${C}"/>
+          </svg>
+          <div class="pct"><div>${pct}%<small>da meta</small></div></div>
+        </div>
+      </section>
+      <section class="kpis">
+        <div class="card kpi"><div class="l">💰 Recebido no mês</div><div class="v" style="color:var(--green)">${brl(d.recebido)}</div></div>
+        <div class="card kpi"><div class="l">💸 Despesas no mês</div><div class="v" style="color:var(--red)">${brl(d.despesas)}</div></div>
+        <div class="card kpi"><div class="l">⚖️ Resultado do mês</div><div class="v" style="color:${d.resultado < 0 ? "var(--red)" : "var(--green)"}">${brl(d.resultado)}</div></div>
+        <div class="card kpi"><div class="l">📥 A receber no mês</div><div class="v" style="color:var(--blue)">${brl(d.aReceberMes)}</div></div>
+        <div class="card kpi"><div class="l">🔥 Em atraso</div><div class="v" style="color:${d.atraso ? "var(--red)" : "var(--green)"}">${d.atraso ? brl(d.atraso) : "Nada"}</div></div>
+      </section>
+      <section class="card">
+        <h2>Contratos fechados x meta · últimos 6 meses</h2>
+        <div class="chart">${d.historico.map((h) => {
+          const [hy, hm] = h.month.split("-");
+          const goal = h.meta ? `<div class="goal" style="bottom:${(h.meta / max) * 150}px"></div>` : "";
+          return `<div class="col"><div class="area">${goal}
+            <div class="stick" style="height:${Math.max(6, (Math.max(h.fechado, h.meta) / max) * 150)}px">
+              <i style="height:${h.fechado ? (h.fechado / Math.max(h.fechado, h.meta)) * 100 : 0}%"></i></div></div>
+            <span class="n">${h.fechado ? brl(h.fechado) : "–"}</span>
+            <small>${SHORT[+hm - 1]}/${hy.slice(2)}</small></div>`;
+        }).join("")}</div>
+        <div class="legend"><span><i style="background:var(--green)"></i>Fechado</span><span><i style="background:var(--green-soft)"></i>Até a meta</span><span><i style="border-top:2px dashed var(--purple);height:0;width:14px"></i>Meta</span></div>
+      </section>
+      <footer>Atualizado em ${new Date(d.updatedAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · 🔒 dados criptografados</footer>`;
+    requestAnimationFrame(() => {
+      document.getElementById("fill").style.width = `${Math.min(100, pct)}%`;
+      document.getElementById("arc").setAttribute("stroke-dasharray", `${(Math.min(100, pct) / 100) * C} ${C}`);
+    });
+  }
+
+  async function load() {
+    try { render(await decrypt()); }
+    catch (e) { document.getElementById("app").innerHTML = `<div class="msg">🔒 ${e.message}</div>`; }
+  }
+  load();
+  setInterval(load, 10 * 60 * 1000);
+</script>
+</body>
+</html>

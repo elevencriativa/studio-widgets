@@ -20,11 +20,16 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: node scripts/build-metrics.mjs
+      - name: Gerar financeiro criptografado
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          FIN_KEY: ${{ secrets.FIN_KEY }}
+        run: node scripts/build-financeiro.mjs
       - name: Publicar se mudou
         run: |
           git config user.name "studio-metricas"
           git config user.email "actions@users.noreply.github.com"
-          git add metricas/data.json
-          git diff --cached --quiet -- metricas/data.json && exit 0
-          git commit -m "Atualiza métricas de entrega"
+          git add metricas/data.json financeiro/data.enc.json 2>/dev/null || git add metricas/data.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Atualiza métricas e financeiro"
           git push
